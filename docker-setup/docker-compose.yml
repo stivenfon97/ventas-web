@@ -1,0 +1,74 @@
+services:
+  app:
+    build:
+      args:
+        user: ${APP_USER}
+        uid: ${APP_UID}
+      context: .
+      dockerfile: ./docker/php/Dockerfile
+    container_name: pi_app
+    user: "${APP_UID}:${APP_UID}"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/php/custom-php.ini:/usr/local/etc/php/conf.d/custom.ini
+      - ./docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf
+    environment:
+      APP_USER: ${APP_USER}
+      APP_UID: ${APP_UID}
+      DB_CONNECTION: ${MYSQL_CONNECTION}
+      DB_DATABASE: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PORT: ${MYSQL_PORT}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_HOST: ${MYSQL_HOST}
+      MICROSOFT_TENANT_ID: ${MICROSOFT_TENANT_ID}
+      MICROSOFT_CLIENT_ID: ${MICROSOFT_CLIENT_ID}
+      MICROSOFT_CLIENT_SECRET: ${MICROSOFT_CLIENT_SECRET}
+      MICROSOFT_CALLBACK_URL: ${MICROSOFT_CALLBACK_URL}
+      INITIAL_USER_PASS: ${INITIAL_USER_PASS}
+      INITIAL_USER_EMAIL: ${INITIAL_USER_EMAIL}
+    ports:
+      - "8000:80"
+      - "5173:5173"
+    depends_on:
+      - db
+    working_dir: /var/www/html
+    networks:
+      - pi-network
+
+  
+  app-server:
+    image: nginx:alpine
+    container_name: pi_server
+    restart: unless-stopped
+    ports:
+      - 80:80
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/:/etc/nginx/conf.d/
+    depends_on:
+      - app
+    networks:
+      - pi-network
+
+  db:
+    image: mysql:8.0
+    container_name: pi_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - pi-network
+
+volumes:
+  db_data:
+networks:
+  pi-network:
+    driver: bridge
