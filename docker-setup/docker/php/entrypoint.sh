@@ -16,8 +16,23 @@ if [ "$(stat -c %u /var/www/html)" != "$APP_UID" ]; then
   chown -R "$APP_UID:$APP_UID" /var/www/html
 fi
 
+chown -R $APP_UID:$APP_UID /var/www/html/storage /var/www/html/bootstrap/cache
 
-chown -R $APP_UID:$APP_UID /var/www/html/pi_app/storage /var/www/html/pi_app/bootstrap/cache
+set -e
+
+# Install node dependecies if necessary
+cd /var/www/html/
+
+rm -rf node_modules/
+
+if [ ! -d "node_modules" ]; then
+  echo "📦 Installing Node dependencies..."
+  npm install --legacy-peer-deps
+fi
+ 
+# start Vite in background
+echo "🚀 Starting Vite (npm run dev)..."
+npm run dev -- --host 0.0.0.0 &
 
 # Ejecute
 exec "$@"

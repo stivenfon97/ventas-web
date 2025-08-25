@@ -1,0 +1,2 @@
+# Ignorar la carpeta de datos de la base de datos local
+mysql_data/
